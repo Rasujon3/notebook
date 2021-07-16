@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:notebook/constants/constants.dart';
+import 'package:notebook/database/database_helper.dart';
+import 'package:notebook/screens/aboutMe.dart';
+import 'package:notebook/screens/home/home_page.dart';
+import 'package:notebook/screens/note/note_add_page.dart';
+import 'package:notebook/utils/custom_toast.dart';
 
 class DrawerPage extends StatefulWidget {
   @override
@@ -7,9 +12,12 @@ class DrawerPage extends StatefulWidget {
 }
 
 class _DrawerPageState extends State<DrawerPage> {
+  DatabaseHelper _db;
+
   @override
   void initState() {
     super.initState();
+    _db = DatabaseHelper();
   }
 
   @override
@@ -44,19 +52,35 @@ class _DrawerPageState extends State<DrawerPage> {
                     height: 70,
                   ),
                   _drawerItem(
-                    title: 'About us',
+                    title: 'About me',
                     icon: Icons.person,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => AboutMe()));
+                    },
                   ),
                   _drawerItem(
                     title: 'Delete account',
                     icon: Icons.account_box_outlined,
-                    onTap: () {},
+                    onTap: () async {
+                      int deleted = await _db.deleteTable();
+                      if (deleted != null) {
+                        CustomToast.toast('Account has been deleted');
+                        Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (context) => HomePage()),
+                            (route) => false);
+                      }
+                    },
                   ),
                   _drawerItem(
-                    title: 'Logout',
+                    title: 'Exit',
                     icon: Icons.exit_to_app,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
                   ),
                 ],
               ),

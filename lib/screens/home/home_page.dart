@@ -5,6 +5,7 @@ import 'package:notebook/models/note.dart';
 import 'package:notebook/screens/drawer/drawer_page.dart';
 import 'package:notebook/screens/home/widgets/app_bar_title_widget.dart';
 import 'package:notebook/screens/note/note_add_page.dart';
+import 'package:notebook/screens/note/note_update_page.dart';
 import 'package:notebook/utils/custom_toast.dart';
 
 class HomePage extends StatefulWidget {
@@ -13,16 +14,17 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String name = 'Ebrahim Joy';
   String _greeting;
   DatabaseHelper _db;
   bool isLoading;
   List<NoteBook> noteList;
   List<NoteBook> storeNoteList;
+  String noData;
 
   @override
   void initState() {
     super.initState();
+    noData = "No note available, add new";
     noteList = [];
     storeNoteList = [];
     isLoading = true;
@@ -42,6 +44,7 @@ class _HomePageState extends State<HomePage> {
         });
       } else {
         setState(() {
+          noData = "No data found, add new";
           noteList = [];
           isLoading = false;
         });
@@ -70,7 +73,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> showMenuSelection(String value, int id) {
+  Future<void> showMenuSelection(String value, int id, NoteBook mBook) async {
     switch (value) {
       case 'Delete':
         setState(() {
@@ -80,7 +83,24 @@ class _HomePageState extends State<HomePage> {
         break;
 
       case 'Edit':
-        CustomToast.toast('Edit clicked');
+       bool isUpdate = await Navigator.push(context, MaterialPageRoute(builder: (context) {
+          return NoteUpdatePage(
+            noteBook: mBook,
+          );
+        }));
+       if(isUpdate){
+         setState(() {
+           isLoading = false;
+         });
+
+         setState(() {
+           isLoading = true;
+         });
+
+         noteList = [];
+         fetchNoteList();
+
+       }
         break;
     }
   }
@@ -92,6 +112,11 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         isLoading = false;
       });
+
+      setState(() {
+        isLoading = true;
+      });
+
       noteList = [];
       fetchNoteList();
     } else {
@@ -108,13 +133,24 @@ class _HomePageState extends State<HomePage> {
       List<NoteBook> newList = [];
 
       for (NoteBook noteBook in storeNoteList) {
-        if (noteBook.title.toLowerCase().contains(query.toLowerCase())) {
+        if (noteBook.title.toLowerCase().contains(query.toLowerCase()) ||
+            noteBook.content.toLowerCase().contains(query.toLowerCase()) ||
+            noteBook.date.toLowerCase().contains(query.toLowerCase())) {
           newList.add(noteBook);
+        } else {
+          Container(child: Center(child: Text("No data found")));
         }
       }
-      setState(() {
-        noteList.addAll(newList);
-      });
+
+      if (newList.length <= 0) {
+        setState(() {
+          noData = "No data found";
+        });
+      } else {
+        setState(() {
+          noteList.addAll(newList);
+        });
+      }
     } else {
       setState(() {
         noteList.addAll(storeNoteList);
@@ -179,7 +215,7 @@ class _HomePageState extends State<HomePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(
-                              'Hello' + ' Ebrahim Joy,',
+                              'Hello' + ' Champ ',
                               style: Theme.of(context)
                                   .textTheme
                                   .headline6
@@ -247,10 +283,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                         !isLoading
                             ? noteList.contains(null) || noteList.length <= 0
-                                ? Container(
-                                    child: Center(
-                                        child:
-                                            Text("No note available, add new")))
+                                ? Container(child: Center(child: Text(noData)))
                                 : ListView.separated(
                                     separatorBuilder: (context, index) =>
                                         SizedBox(
@@ -325,7 +358,7 @@ class _HomePageState extends State<HomePage> {
                 padding: EdgeInsets.zero,
                 icon: Icon(Icons.more_vert),
                 onSelected: (value) {
-                  showMenuSelection(value, noteBook.id);
+                  showMenuSelection(value, noteBook.id, noteBook);
                 },
                 itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                   const PopupMenuItem<String>(
