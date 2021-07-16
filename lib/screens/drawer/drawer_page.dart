@@ -55,6 +55,7 @@ class _DrawerPageState extends State<DrawerPage> {
                     title: 'About me',
                     icon: Icons.person,
                     onTap: () {
+                      Navigator.of(context).pop();
                       Navigator.push(
                           context,
                           MaterialPageRoute(
