@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:notebook/constants/constants.dart';
 import 'package:notebook/database/database_helper.dart';
 import 'package:notebook/models/note.dart';
+import 'package:notebook/provider/home_page_provider.dart';
 import 'package:notebook/screens/drawer/drawer_page.dart';
 import 'package:notebook/screens/home/widgets/app_bar_title_widget.dart';
 import 'package:notebook/screens/note/note_add_page.dart';
 import 'package:notebook/screens/note/note_update_page.dart';
 import 'package:notebook/utils/custom_toast.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -21,6 +23,8 @@ class _HomePageState extends State<HomePage> {
   List<NoteBook> storeNoteList;
   String noData;
 
+
+
   @override
   void initState() {
     super.initState();
@@ -34,26 +38,26 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> fetchNoteList() async {
+    var provider = Provider.of<HomePageProvider>(context, listen: false);
     try {
       var notes = await _db.fetchNoteList();
       if (notes.length > 0) {
-        setState(() {
-          noteList.addAll(notes);
-          storeNoteList.addAll(notes);
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          noData = "No data found, add new";
-          noteList = [];
-          isLoading = false;
-        });
+        provider.notebooks = notes;
+        // setState(() {
+        //   noteList.addAll(notes);
+        //   storeNoteList.addAll(notes);
+        //   isLoading = false;
+        // });
       }
+
+      provider.isLoading = false;
     } catch (error) {
-      setState(() {
-        noteList = [];
-        isLoading = false;
-      });
+      provider.isLoading = false;
+
+      // setState(() {
+      //   noteList = [];
+      //   isLoading = false;
+      // });
     }
   }
 
@@ -74,56 +78,72 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> showMenuSelection(String value, int id, NoteBook mBook) async {
+    var provider = Provider.of<HomePageProvider>(context, listen: false);
+
     switch (value) {
       case 'Delete':
-        setState(() {
-          isLoading = true;
-        });
+        // setState(() {
+        //   isLoading = true;
+        // });
+        provider.isLoading = true;
+
         onDelete(id);
         break;
 
       case 'Edit':
-       bool isUpdate = await Navigator.push(context, MaterialPageRoute(builder: (context) {
+        bool isUpdate =
+            await Navigator.push(context, MaterialPageRoute(builder: (context) {
           return NoteUpdatePage(
             noteBook: mBook,
           );
         }));
-       if(isUpdate){
-         setState(() {
-           isLoading = false;
-         });
+        if (isUpdate) {
+          // setState(() {
+          //   isLoading = false;
+          // });
+          provider.isLoading = false;
 
-         setState(() {
-           isLoading = true;
-         });
 
-         noteList = [];
-         fetchNoteList();
+          // setState(() {
+          //   isLoading = true;
+          // });
+          provider.isLoading = true;
 
-       }
+
+          noteList = [];
+          fetchNoteList();
+        }
         break;
     }
   }
 
   void onDelete(int id) async {
+    var provider = Provider.of<HomePageProvider>(context, listen: false);
+
     int isDeleted = await _db.deleteNote(id);
     if (isDeleted == 1) {
       CustomToast.toast('Note deleted');
-      setState(() {
-        isLoading = false;
-      });
+      // setState(() {
+      //   isLoading = false;
+      // });
+      provider.isLoading = false;
 
-      setState(() {
-        isLoading = true;
-      });
+
+      // setState(() {
+      //   isLoading = true;
+      // });
+      provider.isLoading = true;
+
 
       noteList = [];
       fetchNoteList();
     } else {
       CustomToast.toast('Note not deleted');
-      setState(() {
-        isLoading = false;
-      });
+      // setState(() {
+      //   isLoading = false;
+      // });
+      provider.isLoading = false;
+
     }
   }
 
@@ -185,130 +205,137 @@ class _HomePageState extends State<HomePage> {
             }),
       ),
       body: Scaffold(
-          appBar: AppBar(
-            title: AppBarTitleWidget(
-              title: 'Notebook',
-              subTitle: '-365',
-            ),
+        appBar: AppBar(
+          title: AppBarTitleWidget(
+            title: 'Notebook',
+            subTitle: '-365',
           ),
-          drawer: Drawer(
-            child: DrawerPage(),
-          ),
-          body: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: <Widget>[
-                        Icon(
-                          Icons.menu_book,
-                          size: 40,
-                        ),
-                        SizedBox(
-                          width: 10,
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
-                              'Hello' + ' Champ ',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline6
-                                  .copyWith(
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                            ),
-                            _greeting != null
-                                ? Text(
-                                    _greeting,
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 14,
-                                      fontFamily: 'NunitoSans',
+        ),
+        drawer: Drawer(
+          child: DrawerPage(),
+        ),
+        body: Consumer<HomePageProvider>(
+          builder: (_, mProvider, __) {
+            return SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: <Widget>[
+                          Icon(
+                            Icons.menu_book,
+                            size: 40,
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                'Hello' + ' Champ ',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline6
+                                    .copyWith(
                                       fontWeight: FontWeight.w400,
                                     ),
-                                  )
-                                : Container(),
-                          ],
-                        ),
-                      ],
+                              ),
+                              _greeting != null
+                                  ? Text(
+                                      _greeting,
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 14,
+                                        fontFamily: 'NunitoSans',
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    )
+                                  : Container(),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        SizedBox(
-                          height: 25,
-                        ),
-                        Container(
-                          padding: EdgeInsets.only(
-                              top: 0, bottom: 0, left: 15, right: 15),
-                          height: 55,
-                          child: TextField(
-                            onChanged: (value) {
-                              filterSearchResult(value);
-                            },
-                            // controller: _editingController,
-                            decoration: InputDecoration(
-                              labelText: 'search by title...',
-                              prefixIcon: Icon(Icons.search),
-                              fillColor: kColorLight,
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white),
-                              ),
-                              border: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white),
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(8.0)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          SizedBox(
+                            height: 25,
+                          ),
+                          Container(
+                            padding: EdgeInsets.only(
+                                top: 0, bottom: 0, left: 15, right: 15),
+                            height: 55,
+                            child: TextField(
+                              onChanged: (value) {
+                                filterSearchResult(value);
+                              },
+                              // controller: _editingController,
+                              decoration: InputDecoration(
+                                labelText: 'Search',
+                                prefixIcon: Icon(Icons.search),
+                                fillColor: kColorLight,
+                                enabledBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.white),
+                                ),
+                                border: UnderlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.white),
                                   borderRadius:
                                       BorderRadius.all(Radius.circular(8.0)),
-                                  borderSide: BorderSide(color: kColorPrimary)),
-                              filled: true,
-                              contentPadding: EdgeInsets.only(
-                                  bottom: 10.0, left: 10.0, right: 10.0),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(8.0)),
+                                    borderSide:
+                                        BorderSide(color: kColorPrimary)),
+                                filled: true,
+                                contentPadding: EdgeInsets.only(
+                                    bottom: 10.0, left: 10.0, right: 10.0),
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        !isLoading
-                            ? noteList.contains(null) || noteList.length <= 0
-                                ? Container(child: Center(child: Text(noData)))
-                                : ListView.separated(
-                                    separatorBuilder: (context, index) =>
-                                        SizedBox(
-                                      height: 5,
-                                    ),
-                                    shrinkWrap: true,
-                                    physics: NeverScrollableScrollPhysics(),
-                                    itemCount: noteList.length,
-                                    itemBuilder: (context, index) {
-                                      return noteListItem(noteList[index]);
-                                    },
-                                  )
-                            : Center(
-                                child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      kColorPrimary),
-                                ),
-                              )
-                      ],
+                          SizedBox(
+                            height: 10,
+                          ),
+                          !mProvider.isLoading
+                              ? mProvider.notebooks.contains(null) || mProvider.notebooks.length <= 0
+                                  ? Container(
+                                      child: Center(child: Text(noData)))
+                                  : ListView.separated(
+                                      separatorBuilder: (context, index) =>
+                                          SizedBox(
+                                        height: 5,
+                                      ),
+                                      shrinkWrap: true,
+                                      physics: NeverScrollableScrollPhysics(),
+                                      itemCount: mProvider.notebooks.length,
+                                      itemBuilder: (context, index) {
+                                        return noteListItem(mProvider.notebooks[index]);
+                                      },
+                                    )
+                              : Center(
+                                  child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        kColorPrimary),
+                                  ),
+                                )
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          )),
+            );
+          },
+        ),
+      ),
     );
   }
 

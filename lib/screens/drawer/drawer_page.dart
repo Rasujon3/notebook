@@ -3,7 +3,6 @@ import 'package:notebook/constants/constants.dart';
 import 'package:notebook/database/database_helper.dart';
 import 'package:notebook/screens/aboutMe.dart';
 import 'package:notebook/screens/home/home_page.dart';
-import 'package:notebook/screens/note/note_add_page.dart';
 import 'package:notebook/utils/custom_toast.dart';
 
 class DrawerPage extends StatefulWidget {
